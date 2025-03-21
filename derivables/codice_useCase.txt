@@ -1,0 +1,48 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor Paziente
+actor Dipendente as Dip
+actor Medico
+
+rectangle "App Prenotazioni Sanitarie" {
+    rectangle "Modulo Prenotazioni" as MP
+    rectangle "Modulo Gestione Utenti" as MGU
+    rectangle "Modulo Notifiche" as MN
+    rectangle "Modulo Inserimento Malattie/Sintomi" as MIMS
+    database "Database Prenotazioni/Utenti" as DB1
+    database "Database Malattie/Sintomi" as DB2
+}
+
+' Sistemi esterni
+rectangle "Sistema di Autenticazione" as Auth <<external>>
+rectangle "Servizio di Notifica (Email/SMS)" as Notifica <<external>>
+rectangle "Servizi Sanitari Regionali/Privati" as Esterni <<external>>
+
+' Associazioni utenti
+Paziente --> MP : Prenota/Consulta appuntamenti
+Paziente --> MN : Riceve notifiche
+Paziente --> MGU : Login/Registrazione
+Paziente --> DB1 : Consulta storico
+Paziente --> DB2 : Consulta sintomi (read-only)
+
+Dip --> MP : Gestisce disponibilità\nConferma prenotazioni
+Dip --> MGU : Login
+Dip --> DB1 : Gestione appuntamenti
+
+Medico --> MP : Consulta agenda
+Medico --> MIMS : Modifica malattie/sintomi
+Medico --> DB2 : Accesso completo
+Medico --> MGU : Login
+
+' Associazioni moduli interni
+MP --> DB1
+MN --> DB1
+MN --> Notifica
+MGU --> Auth
+MGU --> DB1
+MIMS --> DB2
+MP --> Esterni : Verifica disponibilità
+
+@enduml
