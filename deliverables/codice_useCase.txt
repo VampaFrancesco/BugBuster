@@ -1,48 +1,50 @@
 @startuml
 left to right direction
+
 skinparam packageStyle rectangle
+skinparam componentStyle rectangle
 
+package "Utenti" <<Attori>>{
 actor Paziente
-actor Dipendente as Dip
-actor Medico
+    actor "Personale Tecnico" as Tecnico
+    actor Medico
+    actor Infermiere
 
-rectangle "App Prenotazioni Sanitarie" {
-    rectangle "Modulo Prenotazioni" as MP
-    rectangle "Modulo Gestione Utenti" as MGU
-    rectangle "Modulo Notifiche" as MN
-    rectangle "Modulo Inserimento Malattie/Sintomi" as MIMS
-    database "Database Prenotazioni/Utenti" as DB1
-    database "Database Malattie/Sintomi" as DB2
 }
 
-' Sistemi esterni
-rectangle "Sistema di Autenticazione" as Auth <<external>>
-rectangle "Servizio di Notifica (Email/SMS)" as Notifica <<external>>
-rectangle "Servizi Sanitari Regionali/Privati" as Esterni <<external>>
+' Sistema interno (App)
+package "(Sistema Interno)" <<Applicazione>>{
+     'component "Prenotazione"
+    component "Gui" as gui
+    component "Data Access" as DA
+}
 
-' Associazioni utenti
-Paziente --> MP : Prenota/Consulta appuntamenti
-Paziente --> MN : Riceve notifiche
-Paziente --> MGU : Login/Registrazione
-Paziente --> DB1 : Consulta storico
-Paziente --> DB2 : Consulta sintomi (read-only)
+' Sistema esterno
+package "Sistemi Esterni" <<WebServer>> {
+    () "HTTP"
+    package "Web Server" as WS <<Apache>>{
+    entity "Autenticazione" as auth
+    entity "Mail server" as smail
+    database "Database app" as dbApp
+}
+    component "API Malattie/Sintomi" as ApiMalattie
+    database "DB Esterno Malattie/Sintomi" as DBMalattie
+}
 
-Dip --> MP : Gestisce disponibilità\nConferma prenotazioni
-Dip --> MGU : Login
-Dip --> DB1 : Gestione appuntamenti
+' --- Interazioni utenti con l’app ---
+Paziente --> DA : Prenota / Visualizza dati
+Tecnico --> DA : Gestione prenotazioni
+Medico --> DA : Accesso cartelle cliniche
+Infermiere --> DA : Stato esami / info pazienti
 
-Medico --> MP : Consulta agenda
-Medico --> MIMS : Modifica malattie/sintomi
-Medico --> DB2 : Accesso completo
-Medico --> MGU : Login
+' --- Data Access comunica tramite HTTP (tratteggiata) ---
+DA ..> HTTP : Richieste HTTP
+HTTP ..> DA : Risposta HTTP
 
-' Associazioni moduli interni
-MP --> DB1
-MN --> DB1
-MN --> Notifica
-MGU --> Auth
-MGU --> DB1
-MIMS --> DB2
-MP --> Esterni : Verifica disponibilità
+' --- HTTP comunica con Web Server e API ---
+HTTP <--> WS : Accesso funzionalità
+HTTP <--> ApiMalattie : Richiesta malattie/sintomi
 
+' --- API Malattie consulta DB esterno ---
+ApiMalattie <--> DBMalattie
 @enduml
